@@ -1,0 +1,144 @@
+#include<stdio.h>
+#include<string.h>
+#include<iostream>
+#include<fstream>
+#include<vector>
+#include<algorithm>
+using namespace std;
+
+int main()
+{
+	int level;
+	string filename;
+	ifstream file;
+	
+	cout << "Please input the file name: ";  //EE308_Lab1_2testfile.cpp
+	cin >> filename;
+	file.open(filename.c_str(),ios::in);
+	//检查文件是否打开
+	if(file.fail()){
+		cout << "The file was not successfully open!" << endl;
+		return 0;
+	}
+	
+	cout << "Please choose the level(1,2,3,4): ";
+	cin >> level;
+	//检查输等级是否满足条件
+	while (level <= 0 || level > 4){
+		cout << "Please choose the level again: ";
+		cin >> level;
+	}
+	
+	int num_kw = 0;            // keyword数
+	int num_sw = 0;            // switch数
+	int num_swcase[100] = {0}; //case数
+	
+
+// level 1
+	string line;    //定义字符串文件命名 
+	int n = 0;      //n:全部字符串数量
+	string s[1000]; //放置所有字符串的集
+	int f[100] = {0};
+	string keyword[32] =
+      { "void","char","int","float","double","short","long","signed",
+		"unsigned","struct","union","enum","typedef","sizeof","auto","static",
+		"register","extern","const","volatile","return","continue","break","goto",
+		"if","else","switch","case","default","for","do","while" };//要求的keyword
+	
+	//将文件中的单词放到stringset中去
+	while (getline(file,line)) //读取一整个文件，文件结束while循环才会停止; getline(对象，字符串);将整个文件变为string line 
+	{
+		int i = 0,j = 0,k = 0 ;
+		int len = line.length(); //字符串长度
+		string w;
+		for (i = 0; i < len; i++)
+		{
+			if (line[i] >= 'a' && line[i] <= 'z')//若字符串第i位是字母
+			{
+				j = i;
+				while (line[j] >= 'a' && line[j] <= 'z'){
+					j++;  //j：找出最后一位字母的位置
+				}
+				w = line.substr(i,j-i);//复制子字符串（line的第i位开始，往后j-i位），赋值给a
+				s[n] = w;         
+		//		cout<<s[num]<<";";//***测试用
+			
+				if (s[n] == "else" && line[j] == ' ')//党字符串第num位是else时,记1
+					f[n] = 1;
+				n++;	
+				for (k = 0; k < 32; k++){
+					if(w == keyword[k]){
+						num_kw++;
+						break;
+					}
+				}
+				i = j;   //i移到j的位置
+			}
+			else
+				j = i; 
+		}
+	}
+	cout << "total num: " << num_kw << endl;
+	
+
+	
+// level 2
+	if(level>1)
+	{
+		for (int i = 0; i < n; i++){
+			if (s[i] == "switch"){
+				num_sw++;
+				for (int j = i+1; j < n; j++){
+					if(s[j] == "case")
+						num_swcase[num_sw]++;    
+					else if(s[j] == "switch"){
+						i = j - 1;
+						break;
+					}                
+				}
+			}
+		}
+		cout << "switch num: " << num_sw << endl;
+		cout << "case num: ";
+		for(int k = 1; k <= num_sw; k++)
+			cout << num_swcase[k] << " ";
+		cout<<endl;
+	}
+	
+	
+// level 3，4
+	int num_if_else = 0;         //if-else数
+	int num_if_elesif_else = 0;  //if-elseif-else数
+	if (level > 2)
+	{
+		int num_elseif = 0; //求elseif数量
+		for (int i = 0; i < n; i++){
+			if(s[i] == "else" && f[i] == 0){
+				for (int j = i; j >= 0; j--){
+					if (s[j] == "if" && num_elseif != 0){
+						num_if_elesif_else++;
+						for (int g = i; g <= j; g++){
+							if (s[g] == "else" && f[g] == 1)
+								num_elseif--;
+							s[g] = " ";
+						}
+						break;
+					}
+					else if (s[j] == "if" && num_elseif == 0){
+						num_if_else++;
+						s[i] = " "; 
+						s[j] = " ";
+						break;
+					}
+					else if (s[j] == "else" && f[j] == 1)
+					num_elseif++;
+				}
+			}
+		}
+		cout << "if-else num: " << num_if_else << endl;
+		if (level > 3){
+			cout << "if-elseif-else num: " << num_if_elesif_else << endl;
+		}
+	}
+	file.close();
+}
